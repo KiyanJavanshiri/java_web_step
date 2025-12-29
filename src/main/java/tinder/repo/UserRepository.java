@@ -1,5 +1,6 @@
 package tinder.repo;
 
+import jakarta.servlet.http.HttpSession;
 import tinder.models.User;
 
 import java.sql.Connection;
@@ -17,7 +18,7 @@ public class UserRepository {
     """;
     private static final String SQL_GET_ALL_USERS =
     """
-       SELECT * FROM users LIMIT ?
+       SELECT * FROM users WHERE login != ? LIMIT ?
     """;
 
     public UserRepository(Connection connection) {
@@ -44,10 +45,11 @@ public class UserRepository {
         }
     }
 
-    public List<User> getAllUsers(int limit) throws SQLException {
+    public List<User> getAllUsers(int limit, String login) throws SQLException {
         try(PreparedStatement ps = connection.prepareStatement(SQL_GET_ALL_USERS)) {
             List<User> users = new ArrayList<>();
-            ps.setInt(1, limit);
+            ps.setString(1, login);
+            ps.setInt(2, limit);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
