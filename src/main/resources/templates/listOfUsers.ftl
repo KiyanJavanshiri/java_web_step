@@ -114,6 +114,8 @@
     </div>
 
     <form method="post" action="${request.contextPath}/users" class="actions">
+            <input type="hidden" name="userId" value="${id}" />
+
             <button class="action-link yes" type="submit" name="action" value="yes">
                 Yes
             </button>

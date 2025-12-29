@@ -25,7 +25,7 @@ public class UsersServlet extends HttpServlet {
     private int limit = 10;
     private int index;
 
-    public UsersServlet() throws SQLException {
+    public UsersServlet() {
         this.userRepository = new UserRepository(DatabaseConfig.getConnection());
     }
 
@@ -40,9 +40,21 @@ public class UsersServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession(false);
         String currentUserLogin = (String) session.getAttribute("userLogin");
+        int currentUserId = (Integer) session.getAttribute("userId");
         User user = null;
         try {
-            user = userRepository.getAllUsers(limit, currentUserLogin).get(index);
+            List<User> users = userRepository.getAllUsers(limit, currentUserLogin, currentUserId);
+
+            if(users.isEmpty()) {
+                resp.getWriter().println("Нет пользователей для показа");
+                return;
+            }
+
+            if(index >= users.size()) {
+                index = 0;
+            }
+
+            user = users.get(index);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -51,6 +63,7 @@ public class UsersServlet extends HttpServlet {
             model.put("request", req);
             model.put("username", user.getUsername());
             model.put("avatar", user.getAvatar_url());
+            model.put("id", user.getId());
             usersT.process(model, resp.getWriter());
         } catch (TemplateException ex) {
             throw new IOException(ex);
@@ -59,7 +72,7 @@ public class UsersServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        index = 1;
+        index = 0;
         render(req, resp, new HashMap<>());
     }
 
@@ -68,16 +81,16 @@ public class UsersServlet extends HttpServlet {
         String action = req.getParameter("action").toLowerCase();
 
         if(action.equals("yes")) {
-            System.out.println("YES");
-        } else {
-            System.out.println("NO");
+            int matchedUserId = Integer.parseInt(req.getParameter("userId"));
+            int userId = (Integer) req.getSession(false).getAttribute("userId");
+            try {
+                userRepository.saveLike(userId, matchedUserId);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        if(index < limit - 1) {
-            index++;
-        } else {
-            index = 0;
-        }
+        index++;
         render(req, resp, new HashMap<>());
     }
 }

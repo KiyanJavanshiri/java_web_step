@@ -18,7 +18,24 @@ public class UserRepository {
     """;
     private static final String SQL_GET_ALL_USERS =
     """
-       SELECT * FROM users WHERE login != ? LIMIT ?
+       SELECT u.*
+               FROM users u
+               LEFT JOIN matches m1
+                 ON m1.user_id = ?
+                AND m1.matched_user_id = u.id
+               LEFT JOIN matches m2
+                 ON m2.user_id = u.id
+                AND m2.matched_user_id = ?
+               WHERE u.id != ?
+                 AND m1.user_id IS NULL
+                 AND m2.user_id IS NULL
+               LIMIT ?
+    """;
+
+    private static final String SQL_SAVE_USER_LIKE =
+    """
+    INSERT INTO matches (user_id, matched_user_id) 
+       VALUE (?, ?)
     """;
 
     public UserRepository(Connection connection) {
@@ -45,11 +62,13 @@ public class UserRepository {
         }
     }
 
-    public List<User> getAllUsers(int limit, String login) throws SQLException {
+    public List<User> getAllUsers(int limit, String login, int userId) throws SQLException {
         try(PreparedStatement ps = connection.prepareStatement(SQL_GET_ALL_USERS)) {
             List<User> users = new ArrayList<>();
-            ps.setString(1, login);
-            ps.setInt(2, limit);
+            ps.setInt(1, userId);
+            ps.setInt(2, userId);
+            ps.setInt(3, userId);
+            ps.setInt(4, limit);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -64,6 +83,15 @@ public class UserRepository {
             }
 
             return users;
+        }
+    }
+
+    public void saveLike(int currentUserId, int matchedUserId) throws SQLException {
+        try(PreparedStatement ps = connection.prepareStatement(SQL_SAVE_USER_LIKE)) {
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, matchedUserId);
+
+            ps.executeUpdate();
         }
     }
 }
