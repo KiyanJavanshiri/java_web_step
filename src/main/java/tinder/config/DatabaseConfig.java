@@ -9,7 +9,12 @@ public class DatabaseConfig {
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "France_trump_JV-123";
 
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+    public static Connection getConnection() {
+        try {
+            return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        } catch (SQLException ex) {
+            System.out.println("Fail on connecting to DB: " + ex.getMessage());
+            return null;
+        }
     }
 }
