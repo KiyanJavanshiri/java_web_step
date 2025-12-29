@@ -56,9 +56,9 @@ public class LoginServlet extends HttpServlet {
 
             if(user != null && user.getPassword().equals(password)) {
                 HttpSession session = req.getSession(true);
-                session.setAttribute("userId", user.getId());
+                session.setAttribute("userLogin", user.getLogin());
 
-                Cookie cookie = new Cookie("user-login", user.getLogin());
+                Cookie cookie = new Cookie("userId", String.valueOf(user.getId()));
                 cookie.setMaxAge(3600);
                 resp.addCookie(cookie);
 
