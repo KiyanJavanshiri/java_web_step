@@ -30,7 +30,7 @@ public class UserRepository {
             ps.setString(1, login);
             ResultSet rs = ps.executeQuery();
 
-            if(rs.next()) {
+            if (rs.next()) {
                 user = new User(
                         rs.getInt("id"),
                         rs.getString("username"),
