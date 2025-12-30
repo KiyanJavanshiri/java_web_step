@@ -103,6 +103,9 @@
         ← Profile
     </a>
 
+    <#if isEmpty>
+        <p>No any users here</p>
+    <#else>
     <img
         src="${avatar}"
         alt="Avatar"
@@ -124,6 +127,7 @@
                 No
             </button>
     </form>
+    </#if>
 
 </div>
 

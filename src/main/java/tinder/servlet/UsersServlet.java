@@ -22,6 +22,7 @@ import java.util.Map;
 @WebServlet(urlPatterns = {"/users"})
 public class UsersServlet extends HttpServlet {
     private UserRepository userRepository;
+    private List<User> users;
     private int limit = 10;
     private int index;
 
@@ -38,32 +39,21 @@ public class UsersServlet extends HttpServlet {
 
         resp.setContentType("text/html");
         resp.setCharacterEncoding("UTF-8");
-        HttpSession session = req.getSession(false);
-        String currentUserLogin = (String) session.getAttribute("userLogin");
-        int currentUserId = (Integer) session.getAttribute("userId");
-        User user = null;
-        try {
-            List<User> users = userRepository.getAllUsers(limit, currentUserLogin, currentUserId);
 
-            if(users.isEmpty()) {
-                resp.getWriter().println("Нет пользователей для показа");
-                return;
-            }
-
-            if(index >= users.size()) {
-                index = 0;
-            }
-
-            user = users.get(index);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        model.put("isEmpty", users.isEmpty());
+        if(index >= users.size()) {
+            resp.sendRedirect("/liked");
+            return;
         }
+
+        User user = users.get(index);
+        model.put("username", user.getUsername());
+        model.put("avatar", user.getAvatar_url());
+        model.put("id", user.getId());
+
         try {
             Template usersT = cfg.getTemplate("listOfUsers.ftl");
             model.put("request", req);
-            model.put("username", user.getUsername());
-            model.put("avatar", user.getAvatar_url());
-            model.put("id", user.getId());
             usersT.process(model, resp.getWriter());
         } catch (TemplateException ex) {
             throw new IOException(ex);
@@ -73,6 +63,14 @@ public class UsersServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         index = 0;
+        HttpSession session = req.getSession(false);
+        String currentUserLogin = (String) session.getAttribute("userLogin");
+        int currentUserId = (Integer) session.getAttribute("userId");
+        try {
+            users = userRepository.getAllUsers(limit, currentUserId);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         render(req, resp, new HashMap<>());
     }
 
@@ -85,12 +83,14 @@ public class UsersServlet extends HttpServlet {
             int userId = (Integer) req.getSession(false).getAttribute("userId");
             try {
                 userRepository.saveLike(userId, matchedUserId);
+                users.remove(index);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
+        } else {
+            index++;
         }
 
-        index++;
         render(req, resp, new HashMap<>());
     }
 }

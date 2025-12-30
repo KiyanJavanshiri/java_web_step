@@ -8,7 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UserRepository {
     private final Connection connection;
@@ -30,6 +32,19 @@ public class UserRepository {
                  AND m1.user_id IS NULL
                  AND m2.user_id IS NULL
                LIMIT ?
+    """;
+
+    private static final String SQL_GET_LIKED_USERS =
+    """
+            SELECT liked_users.* FROM (
+                     SELECT m.id AS match_id , u.*
+                     FROM users u
+                     JOIN matches m
+                       ON m.matched_user_id = u.id
+                       OR m.user_id = u.id
+                     WHERE m.user_id = ?
+                       OR m.matched_user_id = ?
+                       ) AS liked_users WHERE liked_users.id != ?;
     """;
 
     private static final String SQL_SAVE_USER_LIKE =
@@ -62,7 +77,7 @@ public class UserRepository {
         }
     }
 
-    public List<User> getAllUsers(int limit, String login, int userId) throws SQLException {
+    public List<User> getAllUsers(int limit, int userId) throws SQLException {
         try(PreparedStatement ps = connection.prepareStatement(SQL_GET_ALL_USERS)) {
             List<User> users = new ArrayList<>();
             ps.setInt(1, userId);
@@ -92,6 +107,30 @@ public class UserRepository {
             ps.setInt(2, matchedUserId);
 
             ps.executeUpdate();
+        }
+    }
+
+    public Map<Integer, User> getLikedUsers(int currentUserId) throws SQLException {
+        try(PreparedStatement ps = connection.prepareStatement(SQL_GET_LIKED_USERS)) {
+            Map<Integer, User> users = new HashMap<>();
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, currentUserId);
+            ps.setInt(3, currentUserId);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                User user = new User(
+                        rs.getInt("id"),
+                        rs.getString("username"),
+                        rs.getString("login"),
+                        rs.getString("password"),
+                        rs.getString("imageUrl")
+                );
+                users.put(rs.getInt("match_id") ,user);
+            }
+
+            return users;
         }
     }
 }
