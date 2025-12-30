@@ -1,5 +1,6 @@
 package tinder.repo;
 
+import jakarta.servlet.http.HttpSession;
 import tinder.models.User;
 
 import java.sql.Connection;
@@ -7,7 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UserRepository {
     private final Connection connection;
@@ -17,7 +20,37 @@ public class UserRepository {
     """;
     private static final String SQL_GET_ALL_USERS =
     """
-       SELECT * FROM users LIMIT ?
+       SELECT u.*
+               FROM users u
+               LEFT JOIN matches m1
+                 ON m1.user_id = ?
+                AND m1.matched_user_id = u.id
+               LEFT JOIN matches m2
+                 ON m2.user_id = u.id
+                AND m2.matched_user_id = ?
+               WHERE u.id != ?
+                 AND m1.user_id IS NULL
+                 AND m2.user_id IS NULL
+               LIMIT ?
+    """;
+
+    private static final String SQL_GET_LIKED_USERS =
+    """
+            SELECT liked_users.* FROM (
+                     SELECT m.id AS match_id , u.*
+                     FROM users u
+                     JOIN matches m
+                       ON m.matched_user_id = u.id
+                       OR m.user_id = u.id
+                     WHERE m.user_id = ?
+                       OR m.matched_user_id = ?
+                       ) AS liked_users WHERE liked_users.id != ?;
+    """;
+
+    private static final String SQL_SAVE_USER_LIKE =
+    """
+    INSERT INTO matches (user_id, matched_user_id) 
+       VALUE (?, ?)
     """;
 
     public UserRepository(Connection connection) {
@@ -44,10 +77,13 @@ public class UserRepository {
         }
     }
 
-    public List<User> getAllUsers(int limit) throws SQLException {
+    public List<User> getAllUsers(int limit, int userId) throws SQLException {
         try(PreparedStatement ps = connection.prepareStatement(SQL_GET_ALL_USERS)) {
             List<User> users = new ArrayList<>();
-            ps.setInt(1, limit);
+            ps.setInt(1, userId);
+            ps.setInt(2, userId);
+            ps.setInt(3, userId);
+            ps.setInt(4, limit);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -59,6 +95,39 @@ public class UserRepository {
                         rs.getString("imageUrl")
                 );
                 users.add(user);
+            }
+
+            return users;
+        }
+    }
+
+    public void saveLike(int currentUserId, int matchedUserId) throws SQLException {
+        try(PreparedStatement ps = connection.prepareStatement(SQL_SAVE_USER_LIKE)) {
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, matchedUserId);
+
+            ps.executeUpdate();
+        }
+    }
+
+    public Map<Integer, User> getLikedUsers(int currentUserId) throws SQLException {
+        try(PreparedStatement ps = connection.prepareStatement(SQL_GET_LIKED_USERS)) {
+            Map<Integer, User> users = new HashMap<>();
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, currentUserId);
+            ps.setInt(3, currentUserId);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                User user = new User(
+                        rs.getInt("id"),
+                        rs.getString("username"),
+                        rs.getString("login"),
+                        rs.getString("password"),
+                        rs.getString("imageUrl")
+                );
+                users.put(rs.getInt("match_id") ,user);
             }
 
             return users;
