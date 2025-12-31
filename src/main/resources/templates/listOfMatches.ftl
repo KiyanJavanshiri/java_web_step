@@ -76,7 +76,7 @@
 <#else>
     <div class="user-list">
         <#list likedUsers as matchId, user>
-            <a href="${request.contextPath}/message/${matchId}" class="user-card">
+            <a href="${request.contextPath}/messages/${matchId}" class="user-card">
                 <img src="${user.avatar_url}" alt="Avatar" class="avatar"/>
                 <div class="username-text">Start chat with ${user.username}</div>
             </a>
