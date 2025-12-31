@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +52,12 @@ public class UserRepository {
     """
     INSERT INTO matches (user_id, matched_user_id) 
        VALUE (?, ?)
+    """;
+
+    private static final String SQL_GET_ALL_DIALOG =
+    """
+            SELECT u.*, m.text, m.created_at FROM users u
+            JOIN messages m ON u.id = m.user_id WHERE m.dialog_id = ?
     """;
 
     public UserRepository(Connection connection) {
@@ -131,6 +138,31 @@ public class UserRepository {
             }
 
             return users;
+        }
+    }
+
+    public List<Map<String, Object>> getAllDialogMessages(int dialogId) throws SQLException {
+        try(PreparedStatement ps = connection.prepareStatement(SQL_GET_ALL_DIALOG)) {
+            List<Map<String, Object>> messages = new ArrayList<>();
+            ps.setInt(1, dialogId);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Map<String, Object> message = new HashMap<>();
+                message.put("user", new User(
+                        rs.getInt("id"),
+                        rs.getString("username"),
+                        rs.getString("login"),
+                        rs.getString("password"),
+                        rs.getString("imageUrl")
+                ));
+                message.put("text", rs.getString("text"));
+                message.put("date", rs.getDate("created_at").toLocalDate());
+                messages.add(message);
+            }
+
+            return messages;
         }
     }
 }
