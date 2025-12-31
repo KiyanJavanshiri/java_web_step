@@ -60,6 +60,12 @@ public class UserRepository {
             JOIN messages m ON u.id = m.user_id WHERE m.dialog_id = ?
     """;
 
+    private static final String SQL_SAVE_MESSAGE =
+    """
+      INSERT INTO messages (dialog_id, user_id, text)
+      VALUE (?, ?, ?)
+    """;
+
     public UserRepository(Connection connection) {
         this.connection = connection;
     }
@@ -163,6 +169,16 @@ public class UserRepository {
             }
 
             return messages;
+        }
+    }
+
+    public void sendMessage(String message, int dialogId, int currentUserId) throws SQLException {
+        try(PreparedStatement ps = connection.prepareStatement(SQL_SAVE_MESSAGE)) {
+            ps.setInt(1, dialogId);
+            ps.setInt(2, currentUserId);
+            ps.setString(3, message);
+
+            ps.executeUpdate();
         }
     }
 }
