@@ -5,9 +5,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConfig {
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/DB_NAME";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/tinder";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "DB_PASSWORD";
+    private static final String DB_PASSWORD = "France_trump_JV-123";
 
     public static Connection getConnection() {
         try {

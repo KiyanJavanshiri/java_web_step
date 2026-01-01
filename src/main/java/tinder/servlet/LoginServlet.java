@@ -63,7 +63,7 @@ public class LoginServlet extends HttpServlet {
                 cookie.setMaxAge(3600);
                 resp.addCookie(cookie);
 
-                resp.sendRedirect("/profile");
+                resp.sendRedirect("/users");
                 return;
             }
 

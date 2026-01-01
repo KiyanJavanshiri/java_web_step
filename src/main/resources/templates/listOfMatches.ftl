@@ -69,7 +69,7 @@
 </head>
 <body>
 
-<a href="${request.contextPath}/profile" class="back-btn">← Back to Profile</a>
+<a href="${request.contextPath}/users" class="back-btn">← Back to users</a>
 
 <#if isEmpty>
     <p class="no-users">No liked users yet</p>

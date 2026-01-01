@@ -99,10 +99,6 @@
 
 <div class="choice-card">
 
-    <a href="${request.contextPath}/profile" class="back-btn">
-        ← Profile
-    </a>
-
     <#if isEmpty>
         <p>No any users here</p>
     <#else>
